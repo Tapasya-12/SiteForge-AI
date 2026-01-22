@@ -8,7 +8,7 @@ import { Providers } from "./providers.tsx"
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
     <Providers>
-      <App />
+    <App />
     </Providers>
     
   </BrowserRouter>,
