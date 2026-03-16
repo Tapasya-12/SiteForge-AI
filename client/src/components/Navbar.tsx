@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { assets } from '../assets/assets';
 import { Link, useNavigate } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
@@ -11,7 +11,7 @@ const Navbar = () => {
       const navigate = useNavigate();
       const [credits, setCredits] = useState(0);
 
-      const {data:session} = authClient.useSession()
+      const {data: session} = authClient.useSession()
 
       const getCredits=async()=>{
         try {
