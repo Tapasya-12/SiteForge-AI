@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import { assets } from '../assets/assets';
 import { Link, useNavigate } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
 import { UserButton } from '@daveyplate/better-auth-ui'
@@ -26,8 +25,14 @@ const Navbar = () => {
       }
 
       useEffect(()=>{
+        const refreshCredits = () => getCredits();
         if(session?.user){
           getCredits()
+        }
+
+        window.addEventListener('credits-updated', refreshCredits)
+        return () => {
+          window.removeEventListener('credits-updated', refreshCredits)
         }
       }, [session?.user]
       )

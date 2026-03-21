@@ -1,6 +1,8 @@
 import React from 'react'
 import { appPlans } from '../assets/assets';
 import Footer from '../components/Footer';
+import api from '@/configs/axios';
+import { toast } from 'sonner';
 
 interface Plan{
   id: string;
@@ -14,8 +16,16 @@ interface Plan{
 const Pricing = () => {
   const [plans] = React.useState<Plan[]>(appPlans)
   const handlePurchase = async (planId:string) => {
-        
+    try {
+      await api.post('/api/user/purchase-credits', { plan: planId })
+      toast.success('Credits added!')
+      window.dispatchEvent(new Event('credits-updated'))
+    } catch (error: any) {
+      toast.error('Purchase failed')
+      console.error(error)
     }
+  }
+
   return (
     <>
       <div className='w-full max-w-5xl mx-auto z-20 max-md:px-4 min-h-[80vh]'>

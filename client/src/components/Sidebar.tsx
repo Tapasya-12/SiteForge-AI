@@ -2,13 +2,16 @@ import React, { useEffect, useRef, useState } from 'react'
 import type { Message, Project, Version } from '../types';
 import { BotIcon, EyeIcon, Loader2Icon, SendIcon, UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import api from '@/configs/axios';
+import { toast } from 'sonner';
 
 interface SidebarProps {
     isMenuOpen: boolean;
-    project: Project,
-    setProject: (project:Project)=>void;
+    project: Project;
+    setProject: (project: Project) => void;
     isGenerating: boolean;
-    setIsGenerating: (isGenerating:boolean)=>void;
+    setIsGenerating: (isGenerating: boolean) => void;
+    refreshProject: () => Promise<void>;
 }
 
 const Sidebar = ({isMenuOpen, project, setProject, isGenerating, setIsGenerating} : SidebarProps) => {
@@ -22,14 +25,39 @@ const Sidebar = ({isMenuOpen, project, setProject, isGenerating, setIsGenerating
     },[project.conversation.length, isGenerating])
 
     const handleRollback = async (versionId: string) => {
-
+        try {
+            setIsGenerating(true)
+            await api.get(`/api/project/rollback/${project.id}/${versionId}`)
+            await refreshProject()
+            toast.success('Rolled back to version')
+        } catch (error: any) {
+            toast.error('Rollback failed')
+            console.error(error)
+        } finally {
+            setIsGenerating(false)
+        }
     }
+
     const handleRevisions = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (!input.trim()) {
+            toast.error('Please enter a revision prompt')
+            return
+        }
+
         setIsGenerating(true)
-        setTimeout(()=>{
+        try {
+            await api.post(`/api/project/revision/${project.id}`, { message: input })
+            await refreshProject()
+            setInput('')
+            toast.success('Revision created!')
+        } catch (error: any) {
+            toast.error('Revision failed')
+            console.error(error)
+        } finally {
             setIsGenerating(false)
-        },3000)
+        }
     }
     return (
     <div className={`h-full sm:max-w-sm rounded-xl bg-gray-900 border-gray-800 transition-all${isMenuOpen ? 'max-sm:w-0 overflow-hidden' : 'w-full'}`}>

@@ -28,6 +28,11 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/api/user', userRouter);
 app.use('/api/project', projectRouter);
 
+if (!process.env.GROQ_API_KEY) {
+    console.error('GROQ_API_KEY is missing from .env — AI features will not work')
+} else {
+    console.log('Groq API key loaded successfully')
+}
 
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
