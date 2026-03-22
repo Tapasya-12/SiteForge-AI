@@ -140,22 +140,22 @@ export const createUserProject = async(req: Request, res: Response) => {
             data: { credits: { decrement: 5 } }
         });
 
-        
-
         // Enhance User Prompt
         console.log('Starting prompt enhancement...');
         const promptEnhanceResponse = await chatWithFallback([
             {
                 role: 'system',
-                content: `You are a prompt enhancement specialist. Take the user's website request and expand it into a detailed, comprehensive prompt that will help create the best possible website.
-                        Enhance this prompt by:
-                        1. Adding specific design details (layout, color scheme, typography)
-                        2. Specifying key sections and features
-                        3. Describing the user experience and interactions
-                        4. Including modern web design best practices
-                        5. Mentioning responsive design requirements
-                        6. Adding any missing but important elements
-                        Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3 paragraphs max).`
+                content: `You are an expert web designer and prompt engineer. Transform the user's website request into a detailed, vivid design brief that will produce a stunning, professional website.
+
+Enhance the prompt by specifying:
+1. Visual design: color palette (give specific hex codes), typography (specific font names), spacing and layout style
+2. Key sections needed with specific content for each
+3. UI components: buttons, cards, navigation style, hero section details
+4. Animations and interactions to include
+5. Overall mood and aesthetic (e.g. "luxurious dark theme", "clean minimal SaaS", "vibrant creative agency")
+6. Responsive behavior on mobile
+
+Return ONLY the enhanced prompt as 2-3 detailed paragraphs. No preamble, no labels, just the prompt itself.`
             },
             { role: 'user', content: initial_prompt }
         ]);
@@ -163,7 +163,6 @@ export const createUserProject = async(req: Request, res: Response) => {
         console.log('Prompt enhanced. Starting code generation...');
         const enhancedPrompt = promptEnhanceResponse.choices[0].message.content;
 
-    
         await prisma.conversation.create({
             data: {
                 role: 'assistant',
@@ -180,24 +179,40 @@ export const createUserProject = async(req: Request, res: Response) => {
         const codeGenerationResponse = await chatWithFallback([
             {
                 role: 'system',
-                content: `You are an expert web developer. Create a complete, production-ready, single-page website based on this request: "${enhancedPrompt}"
+                content: `You are an elite web developer and UI/UX designer. Create a stunning, production-ready single-page website that looks like it was built by a top-tier agency.
 
-                        CRITICAL REQUIREMENTS:
-                        - Output valid HTML ONLY
-                        - Use Tailwind CSS for ALL styling
-                        - Include this EXACT script in the <head>: <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-                        - Make it fully functional and interactive with JavaScript in <script> tag before closing </body>
-                        - Use modern, beautiful design with great UX using Tailwind classes
-                        - Make it responsive using Tailwind responsive classes (sm:, md:, lg:, xl:)
-                        - Include all necessary meta tags
-                        - Use placeholder images from https://placehold.co/600x400
+                            DESIGN STANDARDS:
+                            - Create a VISUALLY IMPRESSIVE design — not generic or plain
+                            - Use beautiful color combinations with proper contrast
+                            - Add depth with shadows, gradients, and layering
+                            - Include smooth CSS animations (fade-in, slide-up, hover effects)
+                            - Use modern design patterns: glassmorphism, gradient text, animated backgrounds where appropriate
+                            - Pick 1-2 Google Fonts that match the brand (include the link tag)
+                            - Every section must look polished and intentional
 
-                        CRITICAL HARD RULES:
-                        1. Output ONLY raw HTML into message.content — no markdown, no code fences, no explanations
-                        2. Do NOT wrap in \`\`\`html or any backticks
-                        3. Start your response directly with <!DOCTYPE html>`
+                            TECHNICAL REQUIREMENTS:
+                            - Output ONLY raw HTML starting with <!DOCTYPE html>
+                            - Include in <head>: <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+                            - Use Tailwind CSS classes extensively for layout and base styling
+                            - Add a <style> tag with custom CSS for: animations, gradients, glassmorphism, hover effects, and anything Tailwind can't handle
+                            - Add JavaScript in a <script> tag before </body> for: smooth scroll, intersection observer animations, interactive elements
+                            - Use placeholder images from https://placehold.co/
+                            - Make it fully responsive — mobile-first
+
+                            SECTION REQUIREMENTS (include all that are relevant):
+                            - Navigation: sticky, with logo, links, and a CTA button
+                            - Hero: full-viewport, bold headline, subtext, CTA buttons, visual element
+                            - Features/Benefits: icon cards with hover effects
+                            - Social proof: testimonials or stats section
+                            - CTA section: compelling call-to-action
+                            - Footer: links, copyright, social icons
+
+                            ABSOLUTE RULES:
+                            1. Start DIRECTLY with <!DOCTYPE html> — no preamble
+                            2. NO markdown, NO code fences, NO explanations
+                            3. End with </html>`
             },
-            { role: 'user', content: enhancedPrompt || '' }
+            { role: 'user', content: enhancedPrompt || initial_prompt }
         ]);
 
         console.log('Code generated. Saving to DB...');

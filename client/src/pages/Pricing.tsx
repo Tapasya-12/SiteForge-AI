@@ -65,8 +65,9 @@ const Pricing = () => {
                     </div>
                 </div>
                 <p className='mx-auto text-center text-sm max-w-md mt-10 text-white/60 font-light'>Project 
-                <span className='text-white'> Creation/Revision </span> consume
-                <span className='text-white'> 5 credits </span>.You can purchase more credits to create more projects.</p>
+                <span className='text-white'> Creation </span> consume
+                <span className='text-white'> 10 credits </span> & Revision consume <span className='text-white'> 5 credits </span>
+                .You can purchase more credits to create more projects.</p>
       </div>
       <Footer />
     </>

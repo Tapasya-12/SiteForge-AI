@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface EditorPanelProps{
     selectedElement: {
@@ -16,10 +16,11 @@ interface EditorPanelProps{
     } | null;
     onUpdate: (updates: any)=> void;
     onClose: ()=> void;
+    onApply: () => void;
 
 }
 
-const EditorPanel = ({selectedElement, onUpdate, onClose}: EditorPanelProps ) => {
+const EditorPanel = ({selectedElement, onUpdate, onClose, onApply}: EditorPanelProps ) => {
     const [values, setValues] = useState(selectedElement)
     useEffect(()=> {
         setValues(selectedElement)
@@ -105,7 +106,13 @@ const EditorPanel = ({selectedElement, onUpdate, onClose}: EditorPanelProps ) =>
                     </div>
                 </div>
             </div>      
-        </div> 
+        </div>
+        <button
+          onClick={onApply}
+          className='w-full mt-2 bg-indigo-600 hover:bg-indigo-500 
+            text-white text-sm py-2 rounded-lg transition-colors font-medium'>
+          Apply Changes
+        </button>
     </div>
   )
 }

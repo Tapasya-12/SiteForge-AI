@@ -48,15 +48,18 @@ export const makeRevision = async(req: Request, res: Response) => {
         })
 
         // Enhance User Prompt
+        console.log('Starting revision prompt enhancement...');
         const promptEnhanceResponse = await chatWithFallback([
             {
                 role: 'system',
                 content: `You are a prompt enhancement specialist. The user wants to make changes to their website. Enhance their request to be more specific and actionable for a web developer.
-                        Enhance this by:
-                        1. Being specific about what elements to change
-                        2. Mentioning design details (colors, spacing, sizes)
-                        3. Clarifying the desired outcome
-                        4. Using clear technical terms
+
+                            Enhance this by:
+                            1. Being specific about what elements to change
+                            2. Mentioning design details (colors, spacing, sizes)
+                            3. Clarifying the desired outcome
+                            4. Using clear technical terms
+
                         Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).`
             },
             {
@@ -65,6 +68,7 @@ export const makeRevision = async(req: Request, res: Response) => {
             }
         ])
 
+        console.log('Revision prompt enhanced. Generating updated code...');
         const enhancedPrompt = promptEnhanceResponse.choices[0].message.content;
 
         await prisma.conversation.create({
@@ -83,11 +87,12 @@ export const makeRevision = async(req: Request, res: Response) => {
             }
         })
 
-        // Generate website code
+        // Generate revised website code
         const codeGenerationResponse = await chatWithFallback([
             {
                 role: 'system',
                 content: `You are an expert web developer. 
+
                         CRITICAL REQUIREMENTS:
                         - Return ONLY the complete updated HTML code with the requested changes.
                         - Use Tailwind CSS for ALL styling (NO custom CSS).
@@ -95,21 +100,27 @@ export const makeRevision = async(req: Request, res: Response) => {
                         - Include all JavaScript in <script> tags before closing </body>
                         - Make sure it's a complete, standalone HTML document with Tailwind CSS
                         - Return the HTML Code Only, nothing else
+
                         Apply the requested changes while maintaining the Tailwind CSS styling approach.`
             },
             {
                 role: 'user',
-                content: `Here is the current website code: "${currentProject.current_code}" The user wants these changes: "${enhancedPrompt}"`
+                content: `Apply this ONE change: "${enhancedPrompt}"
+
+Here is the complete current website code. Return it with ONLY that change applied:
+
+${currentProject.current_code}`
             }
         ])
 
+        console.log('Revision code generated. Saving...');
         const code = codeGenerationResponse.choices[0].message.content || '';
         const cleanCode = code.replace(/```[a-z]*\n?/gi, '').replace(/```$/g, '').trim();
 
         const version = await prisma.version.create({
             data: {
                 code: cleanCode,
-                decrption: 'Changes made',
+                description: 'Changes made',
                 projectId: String(projectId),
             }
         })

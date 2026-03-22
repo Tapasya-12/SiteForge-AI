@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Project } from '../types';
 import { ArrowBigDownDashIcon, EyeIcon, EyeOffIcon, FullscreenIcon, LaptopIcon, Loader2Icon, MessageSquareIcon, SaveIcon, SmartphoneIcon, TabletIcon, XIcon } from 'lucide-react';
@@ -162,7 +162,10 @@ const Projects = () => {
       <div className='flex-1 flex overflow-auto'>
         <Sidebar isMenuOpen={isMenuOpen} project={project} setProject={setProject} isGenerating={isGenerating} setIsGenerating={setIsGenerating} refreshProject={fetchProject} />
         <div className='flex-1 p-2 pl-0'>
-          <ProjectPreview ref={previewRef} project={project} isGenerating={isGenerating} device={device} />
+          <ProjectPreview ref={previewRef} project={project}
+            isGenerating={isGenerating} device={device}
+            onCodeChange={(code) => setProject({...project, current_code: code})}
+          />
         </div>
       </div>
     </div>

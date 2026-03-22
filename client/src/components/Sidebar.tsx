@@ -8,13 +8,13 @@ import { toast } from 'sonner';
 interface SidebarProps {
     isMenuOpen: boolean;
     project: Project;
-    setProject: (project: Project) => void;
+    setProject?: (project: Project) => void;
     isGenerating: boolean;
     setIsGenerating: (isGenerating: boolean) => void;
     refreshProject: () => Promise<void>;
 }
 
-const Sidebar = ({isMenuOpen, project, setProject, isGenerating, setIsGenerating} : SidebarProps) => {
+const Sidebar = ({isMenuOpen, project, setProject: _setProject, isGenerating, setIsGenerating, refreshProject} : SidebarProps) => {
     const messageRef = useRef<HTMLDivElement>(null);
     const [input, setInput] = useState('')
 
