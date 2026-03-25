@@ -108,6 +108,24 @@ export const createUserProject = async(req: Request, res: Response) => {
     try {
         const { initial_prompt } = req.body;
 
+        // Extract style prefix if present e.g. "[Style: Dark & Luxe] user prompt"
+        const styleMatch = initial_prompt.match(/^\[Style: ([^\]]+)\]\s*/);
+        const styleDirective = styleMatch ? styleMatch[1] : null;
+        const cleanPrompt = styleMatch ? initial_prompt.replace(styleMatch[0], '') : initial_prompt;
+
+        const styleInstructions: Record<string, string> = {
+          'Dark & Luxe':      'Use a dark background (#0a0a0a or #0f0f0f), gold/amber accent colors (#d4af37, #f59e0b), elegant serif display font, premium glassmorphism cards, subtle gold gradient borders.',
+          'Bold Agency':      'Use oversized bold typography as a design element, vibrant unexpected color combinations (e.g. electric blue + hot pink, or lime + purple), asymmetric layouts, large whitespace, creative hover animations.',
+          'Clean SaaS':       'Use a clean white background with indigo/violet as primary color (#6366f1), plenty of whitespace, subtle shadows, rounded corners, professional Inter or Plus Jakarta Sans font, gradient CTAs.',
+          'Minimalist':       'Use strictly black and white with maximum whitespace, typography-driven layout, thin elegant fonts (Cormorant Garamond or Playfair Display), no decorative elements, let spacing do the work.',
+          'Neon Future':      'Use a very dark background (#050510), bright neon accent colors (cyan #00f5ff, purple #bf00ff), glowing box-shadows, monospace or tech fonts (Space Grotesk), grid/circuit patterns.',
+          'Warm & Earthy':    'Use warm cream/beige backgrounds (#faf7f2, #f5efe6), terracotta and sage green accents (#c17f5a, #6b8f71), organic shapes with border-radius, serif fonts, natural textures via CSS gradients.',
+        }
+
+        const stylePromptAddition = styleDirective && styleInstructions[styleDirective]
+          ? `\n\nSTYLE DIRECTIVE — Apply this specific visual style: ${styleInstructions[styleDirective]}`
+          : ''
+
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
@@ -120,8 +138,8 @@ export const createUserProject = async(req: Request, res: Response) => {
 
         const project = await prisma.websiteProject.create({
             data: {
-                name: initial_prompt.length > 50 ? initial_prompt.substring(0, 47) + '...' : initial_prompt,
-                initial_prompt,
+                name: cleanPrompt.length > 50 ? cleanPrompt.substring(0, 47) + '...' : cleanPrompt,
+                initial_prompt: cleanPrompt,
                 userId
             }
         });
@@ -132,7 +150,7 @@ export const createUserProject = async(req: Request, res: Response) => {
         });
 
         await prisma.conversation.create({
-            data: { role: 'user', content: initial_prompt, projectId: project.id }
+            data: { role: 'user', content: cleanPrompt, projectId: project.id }
         });
 
         await prisma.user.update({
@@ -157,7 +175,7 @@ Enhance the prompt by specifying:
 
 Return ONLY the enhanced prompt as 2-3 detailed paragraphs. No preamble, no labels, just the prompt itself.`
             },
-            { role: 'user', content: initial_prompt }
+            { role: 'user', content: cleanPrompt }
         ]);
 
         console.log('Prompt enhanced. Starting code generation...');
@@ -205,14 +223,35 @@ Return ONLY the enhanced prompt as 2-3 detailed paragraphs. No preamble, no labe
                             - Features/Benefits: icon cards with hover effects
                             - Social proof: testimonials or stats section
                             - CTA section: compelling call-to-action
-                            - Footer: links, copyright, social icons
+                            - Contact/Footer: form inputs must be full-width (w-full), stacked vertically, inside a centered max-w-lg container. Footer must have proper padding (py-12) and centered or grid layout — never let footer links float without a flex or grid container
+
+                            CRITICAL RULE: The website topic, purpose, and content MUST stay exactly as the user described. If they said "portfolio for a photographer", the website must be about photography. If they said "landing page for a dog grooming business", it must be about dog grooming. Never replace their topic with something generic.
+
+                            Enhance the prompt by ADDING these details around the user's core idea:
+                            1. Specific sections with RELEVANT content for their exact topic (e.g. for a bakery: menu section, about the baker, gallery of pastries, order form)
+                            2. Visual design: color palette with hex codes that FITS their topic and industry
+                            3. Typography: specific Google Font names that match the mood
+                            4. Animations and interactions relevant to their use case
+                            5. Overall aesthetic that makes sense for their specific business or project
+
+                            Return ONLY the enhanced prompt as 2-3 paragraphs. Start directly with the website description. No preamble, no labels.
+
+                            LAYOUT RULES — NEVER VIOLATE THESE:
+                            - Every card/item in a grid MUST be wrapped in its own <div> with padding
+                            - NEVER place text directly next to another element without a containing div
+                            - Product/feature cards must use: display grid or flexbox with proper gap
+                            - Each card must have: padding (at least p-6), its own background or border, and all content (title + description + button) inside ONE parent div
+                            - Buttons must NEVER float outside their card's div
+                            - Use CSS Grid for product/service cards: grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))
 
                             ABSOLUTE RULES:
-                            1. Start DIRECTLY with <!DOCTYPE html> — no preamble
-                            2. NO markdown, NO code fences, NO explanations
-                            3. End with </html>`
+                            1. Start DIRECTLY with <!DOCTYPE html> — no preamble, no explanation
+                            2. NO markdown, NO code fences, NO comments explaining what you did
+                            3. End with </html>
+                            4. Make it look like a 10000 dollar custom website — not a template
+                            5. VALIDATE your layout mentally before outputting — every element must be inside a proper container`
             },
-            { role: 'user', content: enhancedPrompt || initial_prompt }
+            { role: 'user', content: (enhancedPrompt || cleanPrompt) + stylePromptAddition }
         ]);
 
         console.log('Code generated. Saving to DB...');

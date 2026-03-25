@@ -12,6 +12,7 @@ const Home = () => {
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState('');
   const onSubmitHandler = async (e: React.FormEvent) => {
     e.preventDefault();
     try{
@@ -22,7 +23,10 @@ const Home = () => {
       } 
       setLoading(true);
       console.log('Create with AI request URL:', api.defaults.baseURL + '/api/user/project');
-      const {data} = await api.post('/api/user/project', {initial_prompt: input});
+      const finalPrompt = selectedStyle
+        ? `[Style: ${stylePresets.find(s => s.id === selectedStyle)?.label}] ${input}`
+        : input;
+      const {data} = await api.post('/api/user/project', {initial_prompt: finalPrompt});
       setLoading(false);
       navigate(`/projects/${data.projectId}`)
     }
@@ -36,6 +40,16 @@ const Home = () => {
       toast.error(error?.response?.data?.message || error.message);
     }
   }
+
+  const stylePresets = [
+    { id: 'dark-luxe',     label: 'Dark & Luxe',      description: 'Dark backgrounds, gold accents, premium feel', emoji: '🌟' },
+    { id: 'bold-agency',   label: 'Bold Agency',      description: 'Big typography, vibrant colors, creative layouts', emoji: '🎨' },
+    { id: 'clean-saas',    label: 'Clean SaaS',       description: 'White space, indigo gradients, professional', emoji: '💼' },
+    { id: 'minimalist',    label: 'Minimalist',       description: 'Black and white, typography-driven, elegant', emoji: '✨' },
+    { id: 'neon-futuristic', label: 'Neon Future',    description: 'Dark theme, neon glows, futuristic tech feel', emoji: '🚀' },
+    { id: 'warm-earthy',   label: 'Warm & Earthy',    description: 'Warm tones, organic shapes, natural feel', emoji: '🌿' },
+  ]
+
   return (
       <section className="flex flex-col items-center text-white text-sm pb-20 px-4 font-poppins">
           {/* BACKGROUND IMAGE */}
@@ -56,6 +70,28 @@ const Home = () => {
         <p className="text-center text-base max-w-md mt-2">
           Create, customize and publish stunning websites in minutes using AI-powered tools.
         </p>
+
+        <div className="w-full max-w-2xl mt-8">
+          <p className="text-gray-400 text-xs text-center mb-3">Choose a style preset</p>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+            {stylePresets.map((style) => (
+              <button
+                key={style.id}
+                type="button"
+                onClick={() => setSelectedStyle(prev => prev === style.id ? '' : style.id)}
+                title={style.description}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all duration-200
+                  ${selectedStyle === style.id
+                    ? 'border-indigo-500 bg-indigo-500/20 text-white'
+                    : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/30 hover:text-white'
+                  }`}
+              >
+                <span className="text-lg">{style.emoji}</span>
+                <span className="text-center leading-tight">{style.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         <form onSubmit={onSubmitHandler} className="bg-white/10 max-w-2xl w-full rounded-xl p-4 mt-10 border border-indigo-600/70 focus-within:ring-2 ring-indigo-500 transition-all">
           <textarea onChange={e => setInput(e.target.value)} className="bg-transparent outline-none text-gray-300 resize-none w-full" rows={4} placeholder="Describe your presentation in details" required />
