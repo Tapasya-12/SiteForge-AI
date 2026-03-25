@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import type { Message, Project, Version } from '../types';
+import type { Message, Project, Version, Page } from '../types';
 import { BotIcon, EyeIcon, Loader2Icon, SendIcon, UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '@/configs/axios';
@@ -12,9 +12,10 @@ interface SidebarProps {
     isGenerating: boolean;
     setIsGenerating: (isGenerating: boolean) => void;
     refreshProject: () => Promise<void>;
+    activePage?: Page | null;
 }
 
-const Sidebar = ({isMenuOpen, project, setProject: _setProject, isGenerating, setIsGenerating, refreshProject} : SidebarProps) => {
+const Sidebar = ({isMenuOpen, project, setProject: _setProject, isGenerating, setIsGenerating, refreshProject, activePage} : SidebarProps) => {
     const messageRef = useRef<HTMLDivElement>(null);
     const [input, setInput] = useState('')
 
@@ -27,7 +28,11 @@ const Sidebar = ({isMenuOpen, project, setProject: _setProject, isGenerating, se
     const handleRollback = async (versionId: string) => {
         try {
             setIsGenerating(true)
-            await api.get(`/api/project/rollback/${project.id}/${versionId}`)
+            if (activePage) {
+                await api.get(`/api/project/${project.id}/pages/${activePage.id}/rollback/${versionId}`)
+            } else {
+                await api.get(`/api/project/rollback/${project.id}/${versionId}`)
+            }
             await refreshProject()
             toast.success('Rolled back to version')
         } catch (error: any) {
@@ -48,7 +53,10 @@ const Sidebar = ({isMenuOpen, project, setProject: _setProject, isGenerating, se
 
         setIsGenerating(true)
         try {
-            await api.post(`/api/project/revision/${project.id}`, { message: input })
+            const revisionUrl = activePage
+                ? `/api/project/revision/${project.id}/pages/${activePage.id}/revision`
+                : `/api/project/revision/${project.id}`
+            await api.post(revisionUrl, { message: input })
             await refreshProject()
             setInput('')
             toast.success('Revision created!')
@@ -64,7 +72,7 @@ const Sidebar = ({isMenuOpen, project, setProject: _setProject, isGenerating, se
       <div className='flex flex-col h-full'>
         {/* Message Container */}
         <div className='flex-1 overflow-y-auto no-scrollbar px-3 flex flex-col gap-4'>
-            {[...project.conversation, ...project.versions]
+            {[...project.conversation, ...(project.versions || [])]
             .sort((a,b)=>new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((message)=>{
                 const isMessage = 'content' in message;
 
@@ -99,7 +107,7 @@ const Sidebar = ({isMenuOpen, project, setProject: _setProject, isGenerating, se
                                 </span>
                             </div>
                             <div className='flex items-center justify-between'>
-                                {project.current_version_index === ver.id ? (
+                                {(activePage?.current_version_index || project.current_version_index) === ver.id ? (
                                     <button className='px-3 py-1 rounded-md text-xs bg-gray-700'>Current Version</button>
                                 ): (
                                     <button onClick={() => handleRollback(ver.id)} className='px-3 py-1 rounded-md text-xs bg-indigo-500 hover:bg-indigo-600 text-white'>Rollback to this Version</button>

@@ -4,6 +4,8 @@ import type { Project } from '../types';
 import { ArrowBigDownDashIcon, EyeIcon, EyeOffIcon, FullscreenIcon, LaptopIcon, Loader2Icon, MessageSquareIcon, SaveIcon, SmartphoneIcon, TabletIcon, XIcon } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import ProjectPreview, { type ProjectPreviewRef } from '../components/ProjectPreview';
+import PageSwitcher from '../components/PageSwitcher';
+import AddPageModal from '../components/AddPageModal';
 import api from '@/configs/axios';
 import { toast } from 'sonner';
 
@@ -19,6 +21,14 @@ const Projects = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
+  // Multi-page support
+  const [activePageId, setActivePageId] = useState<string | null>(null)
+  const [isAddPageModalOpen, setIsAddPageModalOpen] = useState(false)
+  const [isAddingPage, setIsAddingPage] = useState(false)
+
+  // Derive activePage from project data
+  const activePage = project?.pages?.find(page => page.id === activePageId) || null
+
   const previewRef = useRef<ProjectPreviewRef>(null)
 
   const fetchProject = async () => {
@@ -32,7 +42,7 @@ const Projects = () => {
       const { data } = await api.get(`/api/user/project/${projectId}`)
       if (data?.project) {
         setProject(data.project)
-        setIsGenerating(!data.project.current_code)
+        setIsGenerating(false) // Always false for multi-page
       } else {
         toast.error('Project not found')
       }
@@ -49,12 +59,18 @@ const Projects = () => {
     setIsSaving(true)
 
     try {
-      const code = previewRef.current?.getCode() || project.current_code
+      const code = previewRef.current?.getCode()
       if (!code) {
         toast.error('Nothing to save')
         return
       }
-      await api.put(`/api/project/save/${project.id}`, { code })
+
+      if (activePage) {
+        await api.put(`/api/project/${project.id}/pages/${activePage.id}/save`, { code })
+      } else {
+        await api.put(`/api/project/save/${project.id}`, { code })
+      }
+
       toast.success('Saved!')
       await fetchProject()
     } catch (error: any) {
@@ -78,6 +94,34 @@ const Projects = () => {
     }
   }
 
+  const addPage = async (name: string, slug: string) => {
+    if (!project) return
+    setIsAddingPage(true)
+    try {
+      const { data } = await api.post(`/api/project/${project.id}/pages`, { name, slug })
+      await fetchProject()
+      setActivePageId(data.page.id)
+      setIsAddPageModalOpen(false)
+      toast.success(`${name} page generated!`)
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to add page')
+    } finally {
+      setIsAddingPage(false)
+    }
+  }
+
+  const deletePage = async (pageId: string) => {
+    if (!project) return
+    try {
+      await api.delete(`/api/project/${project.id}/pages/${pageId}`)
+      if (activePageId === pageId) setActivePageId(null)
+      await fetchProject()
+      toast.success('Page deleted')
+    } catch (error: any) {
+      toast.error('Failed to delete page')
+    }
+  }
+
   useEffect(() => {
     fetchProject()
   }, [projectId])
@@ -87,7 +131,7 @@ const Projects = () => {
     const interval = setInterval(async () => {
       try {
         const { data } = await api.get(`/api/user/project/${projectId}`)
-        if (data?.project?.current_code) {
+        if (data?.project) {
           setProject(data.project)
           setIsGenerating(false)
           clearInterval(interval)
@@ -109,13 +153,14 @@ const Projects = () => {
 
 // downloaded code (index.html)
   const downloadCode = async () => {
-    const code = previewRef.current?.getCode() || project?.current_code;
+    if (!activePage) return
+    const code = previewRef.current?.getCode() || activePage.current_code;
     if (!code) return
 
     const element = document.createElement('a');
     const file = new Blob([code], { type: 'text/html' });
     element.href = URL.createObjectURL(file)
-    element.download = 'index.html';
+    element.download = `${activePage.slug}.html`;
     document.body.appendChild(element)
     element.click();
     document.body.removeChild(element)
@@ -160,14 +205,49 @@ const Projects = () => {
       </div>
 
       <div className='flex-1 flex overflow-auto'>
-        <Sidebar isMenuOpen={isMenuOpen} project={project} setProject={setProject} isGenerating={isGenerating} setIsGenerating={setIsGenerating} refreshProject={fetchProject} />
-        <div className='flex-1 p-2 pl-0'>
-          <ProjectPreview ref={previewRef} project={project}
-            isGenerating={isGenerating} device={device}
-            onCodeChange={(code) => setProject({...project, current_code: code})}
+        <Sidebar isMenuOpen={isMenuOpen} project={project} setProject={setProject} isGenerating={isGenerating} setIsGenerating={setIsGenerating} refreshProject={fetchProject} activePage={activePage} />
+        <div className='flex-1 flex flex-col'>
+          <PageSwitcher
+            pages={project.pages || []}
+            activePage={activePage}
+            onSelectPage={(page) => setActivePageId(page?.id || null)}
+            onAddPage={() => setIsAddPageModalOpen(true)}
+            onDeletePage={deletePage}
+            isGenerating={isGenerating || isAddingPage}
           />
+          <div className='flex-1 p-2 pl-0'>
+            <ProjectPreview
+              ref={previewRef}
+              project={project}
+              activePage={activePage}
+              isGenerating={isGenerating || isAddingPage}
+              device={device}
+              onCodeChange={(code) => {
+                if (activePage) {
+                  // Update the page in the project state
+                  setProject(prev => prev ? {
+                    ...prev,
+                    pages: prev.pages?.map(page =>
+                      page.id === activePage.id
+                        ? { ...page, current_code: code }
+                        : page
+                    )
+                  } : prev)
+                } else {
+                  setProject({ ...project, current_code: code })
+                }
+              }}
+            />
+          </div>
         </div>
       </div>
+
+      <AddPageModal
+        isOpen={isAddPageModalOpen}
+        onClose={() => setIsAddPageModalOpen(false)}
+        onAdd={addPage}
+        isLoading={isAddingPage}
+      />
     </div>
   ) : (
     <div className='flex items-center justify-center h-screen'>

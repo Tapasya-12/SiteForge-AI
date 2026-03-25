@@ -1,11 +1,12 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import type { Project } from '../types';
+import type { Project, Page } from '../types';
 import { iframeScript } from '../assets/assets';
 import EditorPanel from './EditorPanel';
 import { toast } from 'sonner';
 
 interface ProjectPreviewProps {
     project: Project,
+    activePage?: Page | null,
     isGenerating: boolean;
     device?: 'phone'|'tablet'|'desktop';
     showEditorPanel?: boolean;
@@ -16,7 +17,7 @@ export interface ProjectPreviewRef {
     getCode: () => string | undefined;
 }
 
-const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(({project, isGenerating, device = 'desktop', showEditorPanel = true, onCodeChange}, ref) => {
+const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(({project, activePage, isGenerating, device = 'desktop', showEditorPanel = true, onCodeChange}, ref) => {
     const iframeRef = useRef<HTMLIFrameElement>(null)
     const [selectedElement, setSelectedElement] = useState<{
         selector: string
@@ -39,7 +40,7 @@ const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(({proj
         getCode: () => {
             const iframe = iframeRef.current
             return iframe?.contentDocument?.documentElement?.outerHTML
-                || project.current_code
+                || activePage?.current_code || project.current_code
         }
     }))
 
@@ -105,12 +106,12 @@ const ProjectPreview = forwardRef<ProjectPreviewRef, ProjectPreviewProps>(({proj
 
     return (
         <div className='relative h-full bg-gray-900 flex-1 rounded-xl overflow-hidden max-sm:ml-2'>
-            {project.current_code ? (
+            {(activePage?.current_code || project.current_code) ? (
                 <>
                     <iframe
                         ref={iframeRef}
-                        srcDoc={injectPreview(project.current_code)}
-                        key={project.current_version_index || project.current_code?.slice(0, 100)}
+                        srcDoc={injectPreview(activePage?.current_code || project.current_code)}
+                        key={activePage?.current_version_index || project.current_version_index || (activePage?.current_code || project.current_code)?.slice(0, 100)}
                         className={`h-full max-sm:w-full ${resolutions[device]} mx-auto transition-all`}
                         style={{ cursor: selectedElement ? 'default' : 'pointer' }}
                     />

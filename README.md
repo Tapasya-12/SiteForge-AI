@@ -35,6 +35,7 @@ SiteForge AI democratizes web development by enabling anyone to create professio
 - **⚙️ User Settings**: Profile management and application preferences
 - **📊 Responsive Design**: Automatically generated mobile-friendly layouts
 - **🎯 Modern UI**: Clean, dark-themed interface with intuitive navigation
+- **📄 Multi-Page Support**: Add multiple pages to websites with automatic navigation
 
 ### 🚧 In Progress / Upcoming Features
 - **💰 Credit Purchasing**: Stripe/PayPal integration for buying additional credits
@@ -143,6 +144,12 @@ flowchart LR
         PR5[/GET /api/project/preview/:id] --> PP[Get Preview]
         PR6[/GET /api/project/published] --> GPUB[Get Published]
         PR7[/GET /api/project/published/:id] --> GPID[Get Published by ID]
+        PR8[/GET /api/project/:id/pages] --> GPG[Get Pages]
+        PR9[/POST /api/project/:id/pages] --> AP[Add Page]
+        PR10[/DELETE /api/project/:id/pages/:pid] --> DP[Delete Page]
+        PR11[/POST /api/project/:id/pages/:pid/revision] --> MPR[Make Page Revision]
+        PR12[/PUT /api/project/:id/pages/:pid/save] --> SPS[Save Page Code]
+        PR13[/GET /api/project/:id/pages/:pid/rollback/:vid] --> RPVR[Rollback Page Version]
     end
 
     subgraph "Controllers"
@@ -159,6 +166,12 @@ flowchart LR
         PP --> DB
         GPUB --> DB
         GPID --> DB
+        GPG --> DB
+        AP --> DB
+        DP --> DB
+        MPR --> AI
+        SPS --> DB
+        RPVR --> DB
     end
 ```
 
@@ -178,6 +191,7 @@ flowchart LR
 │   │   │   ├── ProjectPreview.tsx # Website preview component
 │   │   │   ├── Footer.tsx         # Site footer
 │   │   │   ├── LoaderSteps.tsx    # Loading animation
+│   │   │   ├── AddPageModal.tsx   # Add page modal component
 │   │   │   └── SiteForgeLogo.tsx  # Logo component
 │   │   ├── configs/               # Configuration files
 │   │   │   └── axios.ts           # API client configuration
@@ -208,6 +222,7 @@ flowchart LR
 │   ├── controllers/              # Route controllers
 │   │   ├── userController.ts     # User-related operations
 │   │   ├── projectController.ts  # Project management operations
+│   │   ├── pageController.ts     # Page management operations
 │   │   └── aiHelper.ts           # AI interaction utilities
 │   ├── lib/                      # Server utilities
 │   │   ├── auth.ts               # Authentication setup
@@ -327,7 +342,8 @@ flowchart LR
 5. **Generate**: Click "Create with AI" to generate your website
 6. **Preview**: View your website across different devices
 7. **Make Changes**: Use the chat interface to request modifications
-8. **Publish**: Share your website with a unique public URL
+8. **Add Pages**: Add additional pages like About, Contact, etc.
+9. **Publish**: Share your website with a unique public URL
 
 ### Managing Projects
 
@@ -348,13 +364,14 @@ Content-Type: application/json
 }
 ```
 
-**Make a Revision**
+**Add a Page**
 ```bash
-POST /api/project/revision/{projectId}
+POST /api/project/{projectId}/pages
 Content-Type: application/json
 
 {
-  "message": "Add a contact form to the website"
+  "name": "About Us",
+  "slug": "about"
 }
 ```
 
@@ -381,6 +398,12 @@ Authorization: Bearer {token}
 | `GET` | `/api/project/preview/:id` | Get project preview | ✅ |
 | `GET` | `/api/project/published` | Get all published projects | ❌ |
 | `GET` | `/api/project/published/:id` | Get published project | ❌ |
+| `GET` | `/api/project/:id/pages` | Get project pages | ✅ |
+| `POST` | `/api/project/:id/pages` | Add new page to project | ✅ |
+| `DELETE` | `/api/project/:id/pages/:pid` | Delete project page | ✅ |
+| `POST` | `/api/project/:id/pages/:pid/revision` | Request page changes | ✅ |
+| `PUT` | `/api/project/:id/pages/:pid/save` | Save page code | ✅ |
+| `GET` | `/api/project/:id/pages/:pid/rollback/:vid` | Rollback page version | ✅ |
 
 ## 📈 Project Status
 
@@ -396,6 +419,7 @@ Authorization: Bearer {token}
 - Multiple professional design presets
 - Conversation history tracking
 - Modern, responsive UI/UX
+- Multi-page website support with navigation
 
 ### 🚧 In Development
 - **Credit Purchase System**: Payment integration for buying credits

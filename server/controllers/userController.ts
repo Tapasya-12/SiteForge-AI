@@ -46,7 +46,11 @@ export const getUserProject = async(req: Request, res: Response) => {
                 conversation: {
                     orderBy: {timestamp: 'asc'}
                 },
-                versions: {orderBy: {timestamp: 'asc'}}
+                versions: {orderBy: {timestamp: 'asc'}},
+                pages: {
+                    orderBy: { order: 'asc' },
+                    include: { versions: { orderBy: { timestamp: 'asc' } } }
+                }
             }
         })
         if (!project) {

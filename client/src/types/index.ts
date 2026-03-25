@@ -20,18 +20,38 @@ export interface Version {
     code: string;
 }
 
+export interface PageVersion {
+    id: string;
+    code: string;
+    description?: string;
+    timestamp: string;
+}
+
+export interface Page {
+    id: string;
+    name: string;
+    slug: string;
+    current_code: string | null;
+    current_version_index: string;
+    projectId: string;
+    order: number;
+    createdAt: string;
+    updatedAt: string;
+    versions: PageVersion[];
+}
+
 export interface Project {
     id: string;
     name: string;
     initial_prompt: string;
     current_code: string;
+    current_version_index: string;
     createdAt: string;
     updatedAt: string;
     userId: string;
     user?: User;
     isPublished?: boolean;
-    versionId?: string;
     conversation: Message[];
-    versions: Version[];
-    current_version_index: string;
+    versions?: Version[];
+    pages?: Page[];
 }
