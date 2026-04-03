@@ -2,6 +2,7 @@ import {Request, Response} from 'express'
 import prisma from '../lib/prisma';
 import { chatWithFallback } from '../lib/aiHelper'
 import { getPalettePromptBlock } from '../lib/colorPalette'
+import { injectAIImages } from '../lib/imageHelper'
 
 // Get User Credits
 export const getUserCredits = async(req: Request, res: Response) => {
@@ -254,6 +255,8 @@ SECTION 4 - Image handling rules (critical - read carefully):
     - a data-image-slot attribute with a kebab-case description of the image, e.g. data-image-slot="hero-farmer-crops"
 - The data-image-slot attribute will be used later to replace these with real AI-generated images.
 - Use a maximum of 3 images per page to keep the layout clean.
+- Every data-image-slot value must be unique within the page. No two img tags may share the same data-image-slot value.
+- The data-image-slot value must be descriptive and specific to the content, not generic. Use values like "wheat-harvest-sunset", "farmer-using-tablet", "crop-disease-closeup" rather than "image-1", "hero-image", "photo".
 
 SECTION 5 - Visual design rules:
 - Use the CSS custom properties provided in the palette block for ALL colors. Never hardcode hex values outside of the :root { } block.
@@ -281,10 +284,12 @@ Generate the complete HTML now.`
         console.log('Code generated. Saving to DB...');
         const rawCode = codeGenerationResponse.choices[0].message.content || '';
         const cleanCode = rawCode.replace(/```[a-z]*\n?/gi, '').replace(/```$/g, '').trim();
+        const websiteContext = `${project.initial_prompt}, website`;
+        const htmlWithImages = await injectAIImages(cleanCode, websiteContext);
 
         const version = await prisma.version.create({
             data: {
-                code: cleanCode,
+                code: htmlWithImages,
                 description: 'Initial Version',
                 projectId: project.id
             }
@@ -301,7 +306,7 @@ Generate the complete HTML now.`
         await prisma.websiteProject.update({
             where: { id: project.id },
             data: {
-                current_code: cleanCode,
+                current_code: htmlWithImages,
                 current_version_index: version.id
             }
         });

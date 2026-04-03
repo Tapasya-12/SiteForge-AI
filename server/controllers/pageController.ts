@@ -2,6 +2,7 @@ import {Request, Response} from 'express'
 import prisma from '../lib/prisma'
 import { chatWithFallback } from '../lib/aiHelper'
 import { getPalettePromptBlock } from '../lib/colorPalette'
+import { injectAIImages } from '../lib/imageHelper'
 
 const getStylePresetFromPrompt = (initialPrompt?: string | null): string => {
     if (!initialPrompt) return 'clean-saas'
@@ -126,6 +127,8 @@ SECTION 4 - Image handling rules (critical - read carefully):
     - a data-image-slot attribute with a kebab-case description of the image, e.g. data-image-slot="hero-farmer-crops"
 - The data-image-slot attribute will be used later to replace these with real AI-generated images.
 - Use a maximum of 3 images per page to keep the layout clean.
+- Every data-image-slot value must be unique within the page. No two img tags may share the same data-image-slot value.
+- The data-image-slot value must be descriptive and specific to the content, not generic. Use values like "wheat-harvest-sunset", "farmer-using-tablet", "crop-disease-closeup" rather than "image-1", "hero-image", "photo".
 
 SECTION 5 - Visual design rules:
 - Use the CSS custom properties provided in the palette block for ALL colors. Never hardcode hex values outside of the :root { } block.
@@ -159,19 +162,21 @@ Follow all rules. Match the home page design exactly.`
         const cleanCode = rawCode.replace(/```[a-z]*\n?/gi, '').replace(/```$/g, '').trim();
 
         const sanitizedCode = sanitizeGeneratedPage(cleanCode, project.current_code || '')
+        const websiteContext = `${name} page, ${project.initial_prompt}`
+        const htmlWithImages = await injectAIImages(sanitizedCode, websiteContext)
 
         const page = await prisma.page.create({
             data: {
                 name,
                 slug,
-                current_code: sanitizedCode,
+                current_code: htmlWithImages,
                 projectId: String(projectId),
             }
         });
 
         const version = await prisma.pageVersion.create({
             data: {
-                code: sanitizedCode,
+                code: htmlWithImages,
                 description: 'Initial Version',
                 pageId: page.id
             }
@@ -384,6 +389,8 @@ SECTION 4 - Image handling rules (critical - read carefully):
     - a data-image-slot attribute with a kebab-case description of the image, e.g. data-image-slot="hero-farmer-crops"
 - The data-image-slot attribute will be used later to replace these with real AI-generated images.
 - Use a maximum of 3 images per page to keep the layout clean.
+- Every data-image-slot value must be unique within the page. No two img tags may share the same data-image-slot value.
+- The data-image-slot value must be descriptive and specific to the content, not generic. Use values like "wheat-harvest-sunset", "farmer-using-tablet", "crop-disease-closeup" rather than "image-1", "hero-image", "photo".
 
 SECTION 5 - Visual design rules:
 - Use the CSS custom properties provided in the palette block for ALL colors. Never hardcode hex values outside of the :root { } block.
@@ -416,10 +423,12 @@ Generate the complete HTML now.`
         const cleanCode = code.replace(/```[a-z]*\n?/gi, '').replace(/```$/g, '').trim();
 
         const sanitizedCode = sanitizeGeneratedPage(cleanCode, project.current_code || '')
+        const websiteContext = `${page.name} page, ${project.initial_prompt}`
+        const htmlWithImages = await injectAIImages(sanitizedCode, websiteContext)
 
         const version = await prisma.pageVersion.create({
             data: {
-                code: sanitizedCode,
+                code: htmlWithImages,
                 description: 'Changes made',
                 pageId: String(pageId),
             }
@@ -428,7 +437,7 @@ Generate the complete HTML now.`
         await prisma.page.update({
             where: { id: String(pageId) },
             data: {
-                current_code: sanitizedCode,
+                current_code: htmlWithImages,
                 current_version_index: version.id
             }
         })

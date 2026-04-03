@@ -2,6 +2,7 @@ import {Request, Response} from 'express'
 import prisma from '../lib/prisma'
 import { chatWithFallback } from '../lib/aiHelper'
 import { getPalettePromptBlock } from '../lib/colorPalette'
+import { injectAIImages } from '../lib/imageHelper'
 
 // Controller Function to make revision
 export const makeRevision = async(req: Request, res: Response) => {
@@ -180,10 +181,12 @@ ${currentProject.current_code}`
         console.log('Revision code generated. Saving...');
         const code = codeGenerationResponse.choices[0].message.content || '';
         const cleanCode = code.replace(/```[a-z]*\n?/gi, '').replace(/```$/g, '').trim();
+        const websiteContext = currentProject.initial_prompt;
+        const htmlWithImages = await injectAIImages(cleanCode, websiteContext);
 
         const version = await prisma.version.create({
             data: {
-                code: cleanCode,
+                code: htmlWithImages,
                 description: 'Changes made',
                 projectId: String(projectId),
             }
@@ -200,7 +203,7 @@ ${currentProject.current_code}`
         await prisma.websiteProject.update({
             where: { id: String(projectId) },
             data: {
-                current_code: cleanCode,
+                current_code: htmlWithImages,
                 current_version_index: version.id
             }
         })
