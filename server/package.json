@@ -21,6 +21,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "groq-sdk": "^1.1.1",
+    "nice-color-palettes": "^4.0.0",
     "openai": "^6.16.0",
     "pg": "^8.17.2"
   },
