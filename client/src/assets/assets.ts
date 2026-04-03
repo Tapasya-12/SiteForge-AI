@@ -6,28 +6,31 @@ export const assets = {
 
 export const appPlans = [
         {
-            id: 'basic',
-            name: 'Basic',
-            price: '$5',
+            id: 'starter',
+            name: 'Starter',
+            price: 5,
             credits: 50,
+            buttonText: 'Buy Starter',
             description: '50 credits included on sign up.',
-            features: ['10 credits per website', '5 credits per revision', '10 credits per page', 'email support', 'Basic analytics',],
+            features: ['10 credits per website', '5 credits per revision', '10 credits per page', 'Enough for 5 websites or mixed usage', 'Email support'],
         },
         {
             id: 'pro',
             name: 'Pro',
-            price: '$19',
+            price: 19,
             credits: 800,
+            buttonText: 'Buy Pro',
             description: 'Add credits to create more projects',
-            features: ['Upto 80 Creations', 'Extended Revisions', 'Advanced AI Models', 'priority email support', 'Advanced analytics',],
+            features: ['10 credits per website', '5 credits per revision', '10 credits per page', 'Great for teams and frequent publishing', 'Priority email support'],
         },
         {
             id: 'enterprise',
             name: 'Enterprise',
-            price: '$49',
+            price: 49,
             credits: 2000,
+            buttonText: 'Buy Enterprise',
             description: 'Add credits to create more projects',
-            features: ['Upto 200 Creations', 'Increased Revisions', 'Advanced AI Models', 'email + chat support', 'Advanced analytics',],
+            features: ['10 credits per website', '5 credits per revision', '10 credits per page', 'Built for high-volume workflows', 'Email + chat support'],
         }
     ]
 

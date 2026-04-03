@@ -1,28 +1,60 @@
-import React from 'react'
+import { useEffect, useState } from 'react'
 import { appPlans } from '../assets/assets';
 import Footer from '../components/Footer';
-import api from '@/configs/axios';
+import axiosInstance from '../configs/axios';
 import { toast } from 'sonner';
+import { useSession } from '../lib/auth-client';
+import { useNavigate } from 'react-router-dom';
 
 interface Plan{
   id: string;
   name: string;
-  price: string;
+  price: number;
   credits: number;
   description: string;
+  buttonText?: string;
   features: string[];
 }
 
 const Pricing = () => {
-  const [plans] = React.useState<Plan[]>(appPlans)
-  const handlePurchase = async (planId:string) => {
+  const [plans] = useState<Plan[]>(appPlans)
+  const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null)
+  const { data: session } = useSession()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('cancelled') === 'true') {
+      toast.info('Checkout cancelled. You have not been charged.')
+    }
+  }, [])
+
+  const handlePurchase = async (plan: typeof appPlans[0]) => {
+    if (!session?.user) {
+      toast.error('Please sign in to purchase credits')
+      navigate('/auth/signin')
+      return
+    }
+
+    setLoadingPlanId(plan.id)
+
     try {
-      await api.post('/api/user/purchase-credits', { plan: planId })
-      toast.success('Credits added!')
-      window.dispatchEvent(new Event('credits-updated'))
+      const response = await axiosInstance.post('/api/payment/checkout', {
+        planId: plan.id,
+        credits: plan.credits,
+        amount: plan.price,
+        planName: plan.name,
+      })
+
+      if (response.data.url) {
+        window.location.href = response.data.url
+      }
     } catch (error: any) {
-      toast.error('Purchase failed')
-      console.error(error)
+      toast.error(
+        error.response?.data?.error || 'Failed to start checkout. Please try again.'
+      )
+    } finally {
+      setLoadingPlanId(null)
     }
   }
 
@@ -40,7 +72,7 @@ const Pricing = () => {
                             <div key={idx} className="p-6 bg-black/20 ring ring-indigo-950 mx-auto w-full max-w-sm rounded-lg text-white shadow-lg hover:ring-indigo-500 transition-all duration-400">
                                 <h3 className="text-xl font-bold">{plan.name}</h3>
                                 <div className="my-2">
-                                    <span className="text-4xl font-bold">{plan.price}</span>
+                                  <span className="text-4xl font-bold">${plan.price}</span>
                                     <span className="text-gray-300"> / {plan.credits} credits</span>
                                 </div>
 
@@ -57,8 +89,12 @@ const Pricing = () => {
                                         </li>
                                     ))}
                                 </ul>
-                                <button onClick={() => handlePurchase(plan.id)} className="w-full py-2 px-4 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-sm rounded-md transition-all">
-                                    Buy Now
+                                <button
+                                  onClick={() => handlePurchase(plan)}
+                                  disabled={loadingPlanId === plan.id}
+                                  className="w-full py-2 px-4 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 text-sm rounded-md transition-all"
+                                >
+                                  {loadingPlanId === plan.id ? 'Redirecting...' : plan.buttonText || 'Get Started'}
                                 </button>
                             </div>
                         ))}
