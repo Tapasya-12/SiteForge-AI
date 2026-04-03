@@ -60,7 +60,7 @@ export const addPage = async(req: Request, res: Response) => {
         }
 
         if (user.credits < 10) {
-            return res.status(403).json({message: 'Add more credits to create a page'});
+            return res.status(403).json({message: 'Insufficient credits. Adding a page requires 10 credits.'});
         }
 
         const project = await prisma.websiteProject.findUnique({
@@ -291,7 +291,7 @@ export const makePageRevision = async(req: Request, res: Response) => {
         }
 
         if (user.credits < 5) {
-            return res.status(403).json({message: 'Add more credits to make changes'});
+            return res.status(403).json({message: 'Insufficient credits. Page revision requires 5 credits.'});
         }
 
         if (!message || message.trim() === '') {

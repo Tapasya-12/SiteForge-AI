@@ -151,8 +151,8 @@ export const createUserProject = async(req: Request, res: Response) => {
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
 
-        if (user && user.credits < 5) {
-            return res.status(403).json({ message: 'Add credits to create more projects' });
+        if (user && user.credits < 10) {
+            return res.status(403).json({ message: 'Insufficient credits. Project creation requires 10 credits.' });
         }
 
         const project = await prisma.websiteProject.create({
@@ -174,7 +174,7 @@ export const createUserProject = async(req: Request, res: Response) => {
 
         await prisma.user.update({
             where: { id: userId },
-            data: { credits: { decrement: 5 } }
+            data: { credits: { decrement: 10 } }
         });
 
         // Enhance User Prompt
@@ -317,7 +317,7 @@ Generate the complete HTML now.`
         if (userId) {
             await prisma.user.update({
                 where: { id: userId },
-                data: { credits: { increment: 5 } }
+                data: { credits: { increment: 10 } }
             });
         }
         console.log(error.code || error.message);

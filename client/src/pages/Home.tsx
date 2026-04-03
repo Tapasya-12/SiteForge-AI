@@ -102,6 +102,7 @@ const Home = () => {
               </>
             )}
           </button>
+          <p className="text-gray-400 text-xs mt-2">Generating your website costs 10 credits</p>
         </form>
 
         <div className="flex flex-wrap items-center justify-center gap-16 md:gap-20 mx-auto mt-16">

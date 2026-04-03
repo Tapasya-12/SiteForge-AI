@@ -125,7 +125,7 @@ const AddPageModal: React.FC<AddPageModalProps> = ({
 
           {/* Cost notice */}
           <p className="text-sm text-amber-400 mb-4">
-            💡 Generating a new page costs 10 credits
+            Adding a page costs 10 credits
           </p>
 
           {/* Buttons */}

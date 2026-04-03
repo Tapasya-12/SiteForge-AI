@@ -9,9 +9,9 @@ export const appPlans = [
             id: 'basic',
             name: 'Basic',
             price: '$5',
-            credits: 200,
-            description: 'Start Now, scale up as you grow.',
-            features: ['Upto 20 Creations', 'Limited Revisions', 'Basic AI Models', 'email support', 'Basic analytics',],
+            credits: 50,
+            description: '50 credits included on sign up.',
+            features: ['10 credits per website', '5 credits per revision', '10 credits per page', 'email support', 'Basic analytics',],
         },
         {
             id: 'pro',

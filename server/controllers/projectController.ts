@@ -20,7 +20,7 @@ export const makeRevision = async(req: Request, res: Response) => {
         }
 
         if (user.credits < 5) {
-            return res.status(403).json({message: 'Add more credits to make changes'});
+            return res.status(403).json({message: 'Insufficient credits. Revision requires 5 credits.'});
         }
 
         if (!message || message.trim() === '') {
