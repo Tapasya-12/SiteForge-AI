@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Project } from '../types';
 import { ArrowBigDownDashIcon, EyeIcon, EyeOffIcon, FullscreenIcon, LaptopIcon, Loader2Icon, MessageSquareIcon, SaveIcon, SmartphoneIcon, TabletIcon, XIcon } from 'lucide-react';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import Sidebar from '../components/Sidebar';
 import ProjectPreview, { type ProjectPreviewRef } from '../components/ProjectPreview';
 import PageSwitcher from '../components/PageSwitcher';
@@ -20,6 +22,7 @@ const Projects = () => {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   // Multi-page support
   const [activePageId, setActivePageId] = useState<string | null>(null)
@@ -28,6 +31,7 @@ const Projects = () => {
 
   // Derive activePage from project data
   const activePage = project?.pages?.find(page => page.id === activePageId) || null
+  const pages = project?.pages || []
 
   const previewRef = useRef<ProjectPreviewRef>(null)
 
@@ -151,19 +155,42 @@ const Projects = () => {
     )
   }
 
-// downloaded code (index.html)
-  const downloadCode = async () => {
-    if (!activePage) return
-    const code = previewRef.current?.getCode() || activePage.current_code;
-    if (!code) return
+  const handleDownloadZip = async () => {
+    if (!project) return
 
-    const element = document.createElement('a');
-    const file = new Blob([code], { type: 'text/html' });
-    element.href = URL.createObjectURL(file)
-    element.download = `${activePage.slug}.html`;
-    document.body.appendChild(element)
-    element.click();
-    document.body.removeChild(element)
+    setIsDownloading(true)
+    try {
+      const zip = new JSZip()
+      const homeFileName = 'index.html'
+
+      const readmeLines = [
+        `# ${project.name}`,
+        '',
+        'This ZIP was exported from SiteForge AI.',
+        '',
+        '## Included files',
+        `- ${homeFileName} (Home page)`,
+        ...pages.map((page) => `- ${page.slug}.html (${page.name})`),
+        '',
+        '## How to use',
+        `1. Open ${homeFileName} in your browser to view the home page.`,
+        '2. Open other HTML files directly or link them through your own navigation.',
+        '3. Upload all files to your static hosting provider to deploy the site.',
+      ]
+
+      zip.file('README.md', readmeLines.join('\n'))
+
+      zip.file(homeFileName, project.current_code ?? '<!-- Home page has no generated content yet -->')
+
+      for (const page of pages) {
+        zip.file(`${page.slug}.html`, page.current_code ?? `<!-- ${page.name} has no content yet -->`)
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' })
+      saveAs(blob, `${project.name.replace(/\s+/g, '-').toLowerCase()}.zip`)
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return project ? (
@@ -194,8 +221,14 @@ const Projects = () => {
           <Link target='_blank' to={`/preview/${project.id}`} className='flex items-center gap-2 px-4 py-1 rounded sm:rounded-sm border border-gray-700 hover:border-gray-500 transition-colors'>
             <FullscreenIcon size={16} />Preview
           </Link>
-          <button onClick={downloadCode} className='bg-linear-to-br from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white px-3.5 py-1 flex items-center gap-2 rounded sm:runded-sm transition-colors'>
-            <ArrowBigDownDashIcon size={16} />Download
+          <button
+            onClick={handleDownloadZip}
+            disabled={isDownloading}
+            title='Download all pages as ZIP'
+            className='bg-linear-to-br from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white px-3.5 py-1 flex items-center gap-2 rounded sm:runded-sm transition-colors disabled:opacity-60'
+          >
+            {isDownloading ? <Loader2Icon className='animate-spin' size={16} /> : <ArrowBigDownDashIcon size={16} />}
+            {isDownloading ? 'Downloading...' : 'Download ZIP'}
           </button>
           <button onClick={togglePublish} className='bg-linear-to-br from-indigo-700 to-indigo-600 hover:from-indigo-600 hover:to-indigo-500 text-white px-3.5 py-1 flex items-center gap-2 rounded sm:runded-sm transition-colors'>
             {project.isPublished ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
