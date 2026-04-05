@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
 import { UserButton } from '@daveyplate/better-auth-ui'
 import api from '@/configs/axios';
@@ -9,6 +9,7 @@ import SiteForgeLogo from './SiteForgeLogo';
 const Navbar = () => {
       const [menuOpen, setMenuOpen] = React.useState(false);
       const navigate = useNavigate();
+      const location = useLocation();
       const [credits, setCredits] = useState(0);
 
       const {data: session} = authClient.useSession()
@@ -34,20 +35,39 @@ const Navbar = () => {
         return () => {
           window.removeEventListener('credits-updated', refreshCredits)
         }
-      }, [session?.user]
-      )
-      
+      }, [session?.user])
+
+      const navLinks = [
+        { to: '/',           label: 'Home' },
+        { to: '/projects',   label: 'My Projects' },
+        { to: '/community',  label: 'Community' },
+        { to: '/pricing',    label: 'Pricing' },
+      ]
+
+      const isActive = (path: string) => {
+        if (path === '/') return location.pathname === '/'
+        return location.pathname.startsWith(path)
+      }
+
   return (
     <>
       <nav className="z-50 flex items-center justify-between w-full py-4 px-4 md:px-16 lg:px-24 xl:px-32 backdrop-blur border-b text-white border-slate-800">
         <SiteForgeLogo />
 
           <div className="hidden md:flex items-center gap-8 transition duration-500">
-            <Link to="/">Home</Link>
-            <Link to="/projects">My Projects</Link>
-            <Link to="/community">Community</Link>
-            <Link to="/pricing">Pricing</Link>
-            
+            {navLinks.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                className={`transition-all duration-200 ${
+                  isActive(to)
+                    ? 'text-white font-bold'
+                    : 'text-gray-400 hover:text-white font-normal'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center gap-3">
@@ -60,10 +80,8 @@ const Navbar = () => {
               </button>
               <UserButton size='icon'/>
               </>
-              
-            )
-              }
-            <button id="open-menu" className="md:hidden active:scale-90 transition" onClick={() => setMenuOpen(true)} >
+            )}
+            <button id="open-menu" className="md:hidden active:scale-90 transition" onClick={() => setMenuOpen(true)}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>
             </button>
           </div>
@@ -72,12 +90,22 @@ const Navbar = () => {
         {/* Mobile Menu */}
         {menuOpen && (
           <div className="fixed inset-0 z-[100] bg-black/60 text-white backdrop-blur flex flex-col items-center justify-center text-lg gap-8 md:hidden transition-transform duration-300">
-            <Link to='/' onClick={() => setMenuOpen(false)}>Home</Link>
-            <Link to='/projects' onClick={() => setMenuOpen(false)}>My Projects</Link>
-            <Link to='/community' onClick={() => setMenuOpen(false)}>Community</Link>
-            <Link to='/pricing' onClick={() => setMenuOpen(false)}>Pricing</Link>
+            {navLinks.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setMenuOpen(false)}
+                className={`transition-all duration-200 ${
+                  isActive(to)
+                    ? 'text-white font-bold'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
 
-            <button className="active:ring-3 active:ring-white aspect-square size-10 p-1 items-center justify-center bg-slate-100 hover:bg-slate-200 transition text-black rounded-md flex" onClick={() => setMenuOpen(false)} >
+            <button className="active:ring-3 active:ring-white aspect-square size-10 p-1 items-center justify-center bg-slate-100 hover:bg-slate-200 transition text-black rounded-md flex" onClick={() => setMenuOpen(false)}>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
           </div>
