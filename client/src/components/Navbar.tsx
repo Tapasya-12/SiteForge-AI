@@ -4,7 +4,7 @@ import { authClient } from '@/lib/auth-client';
 import { UserButton } from '@daveyplate/better-auth-ui'
 import api from '@/configs/axios';
 import { toast } from 'sonner';
-import SiteForgeLogo from './SiteForgeLogo';
+import logo from '@/assets/logo.svg';
 
 const Navbar = () => {
       const [menuOpen, setMenuOpen] = React.useState(false);
@@ -52,7 +52,12 @@ const Navbar = () => {
   return (
     <>
       <nav className="z-50 flex items-center justify-between w-full py-4 px-4 md:px-16 lg:px-24 xl:px-32 backdrop-blur border-b text-white border-slate-800">
-        <SiteForgeLogo />
+        <img
+          src={logo}
+          alt="SiteForge"
+          style={{ height: '60px', width: 'auto', cursor: 'pointer' }}
+          onClick={() => navigate('/')}
+        />
 
           <div className="hidden md:flex items-center gap-8 transition duration-500">
             {navLinks.map(({ to, label }) => (
