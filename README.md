@@ -103,6 +103,14 @@ These files are referenced in some historical conversations but are not present 
 
 ---
 
+## Deployment
+
+- Frontend: Deployed on Vercel at https://site-forge-ai.vercel.app
+- Backend: Deployed on Render at https://siteforge-backend-nwvu.onrender.com
+- Database: Neon PostgreSQL (hosted, serverless)
+
+---
+
 ## 3. Monorepo Layout
 
 Root contains two major apps:
@@ -788,36 +796,44 @@ curl -X GET "http://localhost:3000/api/project/<projectId>/pages/<pageId>/rollba
 
 ### 12.1 Required Server Variables
 
-Used directly in source:
+Production server env vars:
 
-- `DATABASE_URL`
-- `TRUSTED_ORIGINS`
-- `BETTER_AUTH_URL`
-- `BETTER_AUTH_SECRET`
-- `GROQ_API_KEY`
-- `NODE_ENV`
+- `DATABASE_URL`: Neon PostgreSQL connection string
+- `TRUSTED_ORIGINS`: Vercel frontend URL
+- `BETTER_AUTH_URL`: Render backend URL
+- `BETTER_AUTH_SECRET`: secret key
+- `GROQ_API_KEY`: Groq API key
+- `NODE_ENV`: production
+- `STRIPE_SECRET_KEY`: Stripe secret
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret
+- `CLIENT_URL`: Vercel frontend URL
 
 Suggested `server/.env`:
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/siteforge
-TRUSTED_ORIGINS=http://localhost:5173
-BETTER_AUTH_URL=http://localhost:3000
-BETTER_AUTH_SECRET=replace_with_long_random_secret
-GROQ_API_KEY=replace_with_groq_key
-NODE_ENV=development
+DATABASE_URL=<neon_postgresql_connection_string>
+TRUSTED_ORIGINS=https://site-forge-ai.vercel.app
+BETTER_AUTH_URL=https://siteforge-backend-nwvu.onrender.com
+BETTER_AUTH_SECRET=<your_secret_key>
+GROQ_API_KEY=<your_groq_api_key>
+NODE_ENV=production
+STRIPE_SECRET_KEY=<your_stripe_secret_key>
+STRIPE_WEBHOOK_SECRET=<your_stripe_webhook_secret>
+CLIENT_URL=https://site-forge-ai.vercel.app
 ```
 
 ### 12.2 Required Client Variables
 
-Used directly in source:
+Production client env vars:
 
-- `VITE_BASEURL`
+- `VITE_BASEURL`: Render backend URL
+- `VITE_STRIPE_PUBLISHABLE_KEY`: Stripe publishable key
 
 Suggested `client/.env`:
 
 ```env
-VITE_BASEURL=http://localhost:3000
+VITE_BASEURL=https://siteforge-backend-nwvu.onrender.com
+VITE_STRIPE_PUBLISHABLE_KEY=<your_stripe_publishable_key>
 ```
 
 ---
@@ -878,6 +894,13 @@ npm run dev
 
 - frontend: `http://localhost:5173`
 - backend: `http://localhost:3000`
+
+### 13.6 Local Env Overrides
+
+For local development, use:
+
+- `VITE_BASEURL=http://localhost:3000`
+- `TRUSTED_ORIGINS=http://localhost:5173`
 
 ---
 
@@ -990,6 +1013,9 @@ Defined in `server/package.json`:
    - navbar currently navigates to `/auth/signin`,
    - ensure Better Auth UI expected pathname values are aligned.
 
+6. CORS dynamic preview support:
+  - CORS config now uses a function that dynamically allows Vercel preview deployment URLs matching `https://site-forge-*.vercel.app`.
+
 ---
 
 ## 18. Troubleshooting Guide
@@ -1070,27 +1096,29 @@ Manual checks:
 
 ## 20. Deployment Notes
 
-### 20.1 Minimal Requirements
+### 20.1 Frontend Deployment
 
-- Node runtime for server,
-- PostgreSQL database,
-- environment variables configured,
-- static frontend build hosted separately or via reverse proxy.
+- Platform: Vercel
+- Root directory: `client`
+- Framework preset: Vite
+- Production URL: `https://site-forge-ai.vercel.app`
 
-### 20.2 CORS and Auth URLs
+### 20.2 Backend Deployment
 
-For production:
+- Platform: Render
+- Production URL: `https://siteforge-backend-nwvu.onrender.com`
+- Build command includes:
+  - `npm install --include=dev`
+  - `npx prisma generate`
+  - `npx prisma migrate deploy`
+  - `npm run build` (tsc)
+  - `cp -r generated dist/generated`
 
-- set `TRUSTED_ORIGINS` to actual frontend URL(s),
-- set `BETTER_AUTH_URL` to deployed backend URL,
-- set `NODE_ENV=production` for secure cookie behavior.
+### 20.3 Database and Runtime
 
-### 20.3 Reverse Proxy
-
-If deploying frontend and backend behind one domain, ensure:
-
-- `/api` paths route to server,
-- credentials and cookie domain settings are consistent.
+- Database: Neon PostgreSQL (hosted, serverless)
+- No self-hosting required for database
+- Render must have `NODE_ENV=production` for secure cookie behavior
 
 ---
 
