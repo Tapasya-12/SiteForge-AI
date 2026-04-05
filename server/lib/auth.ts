@@ -4,12 +4,6 @@ import prisma from "./prisma.js";
 
 const rawOrigins = process.env.TRUSTED_ORIGINS?.split(',').map(o => o.trim()) || [];
 
-const trustedOrigins = [
-  ...rawOrigins,
-  "https://site-forge-ai.vercel.app",
-  /https:\/\/site-forge-[a-z0-9-]+\.vercel\.app$/,
-];
-
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
@@ -20,7 +14,12 @@ export const auth = betterAuth({
     user: {
         deleteUser: { enabled: true }
     },
-    trustedOrigins,
+    trustedOrigins: (request) => {
+        const origin = request?.headers?.get('origin') || '';
+        if (rawOrigins.includes(origin)) return rawOrigins;
+        if (/https:\/\/site-forge-[a-z0-9-]+\.vercel\.app$/.test(origin)) return [origin];
+        return rawOrigins;
+    },
     baseUrl: process.env.BETTER_AUTH_URL!,
     secret: process.env.BETTER_AUTH_SECRET!,
     advanced: {
