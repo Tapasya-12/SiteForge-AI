@@ -90,7 +90,7 @@ const Pricing = () => {
                                     ))}
                                 </ul>
                                 <button
-                                  onClick={() => handlePurchase(plan)}
+                                  onClick={() => handlePurchase(plan as any)}
                                   disabled={loadingPlanId === plan.id}
                                   className="w-full py-2 px-4 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95 text-sm rounded-md transition-all"
                                 >
